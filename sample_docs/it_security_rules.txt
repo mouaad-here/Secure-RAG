@@ -1,0 +1,32 @@
+# IT Security Rules
+
+## Acceptable Use Policy
+
+### Passwords
+- Minimum 12 characters with uppercase, lowercase, numbers, and symbols
+- Change passwords every 90 days
+- Never share passwords with anyone, including IT staff
+- Use the company-approved password manager (1Password)
+
+### Email Security
+- Do not open attachments from unknown senders
+- Report phishing emails using the "Report Phishing" button in Outlook
+- Do not forward company emails to personal accounts
+
+### Software Installation
+- Only install software approved by IT
+- Submit software requests through the IT Service Desk
+- Unauthorized software will be flagged and may be removed
+
+### Data Classification
+- **Public:** Marketing materials, job postings
+- **Internal:** Team documents, meeting notes
+- **Confidential:** Financial data, customer PII, employee records
+- **Restricted:** Trade secrets, security credentials, encryption keys
+
+### Incident Reporting
+If you suspect a security breach:
+1. Disconnect from the network immediately
+2. Contact IT Security at security@company.com or ext. 5555
+3. Do not attempt to investigate on your own
+4. Preserve all evidence (screenshots, emails)

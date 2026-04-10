@@ -1,0 +1,79 @@
+"""
+Secure RAG MVP — Ollama LLM Client
+Handles communication with the local Ollama server.
+Optimized for NVIDIA RTX 3050 with CUDA acceleration.
+"""
+
+from typing import Optional
+
+import ollama as ollama_lib
+
+from app.config import get_settings
+
+
+class OllamaClient:
+    """
+    Client for the Ollama LLM server.
+    Configured for llama3.2:3b on RTX 3050 (4GB VRAM).
+    """
+
+    def __init__(
+        self,
+        model: str | None = None,
+        host: str | None = None,
+    ):
+        settings = get_settings()
+        self.model = model or settings.llm_model
+        self.host = host or settings.ollama_host
+        self.context_window = settings.llm_context_window
+        self.temperature = settings.llm_temperature
+        self._client = ollama_lib.Client(host=self.host)
+
+    def generate(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> str:
+        """
+        Generate a response from the LLM.
+
+        Args:
+            prompt: The full prompt (system + context + question).
+            temperature: Override default temperature.
+            max_tokens: Maximum tokens to generate.
+
+        Returns:
+            The generated text response.
+        """
+        options = {
+            "temperature": temperature or self.temperature,
+            "num_ctx": self.context_window,
+        }
+        if max_tokens:
+            options["num_predict"] = max_tokens
+
+        response = self._client.generate(
+            model=self.model,
+            prompt=prompt,
+            options=options,
+        )
+
+        return response["response"].strip()
+
+    def is_available(self) -> bool:
+        """Check if the Ollama server is reachable and the model is loaded."""
+        try:
+            models = self._client.list()
+            model_names = [m.get("name", "") for m in models.get("models", [])]
+            return any(self.model in name for name in model_names)
+        except Exception:
+            return False
+
+    def list_models(self) -> list:
+        """List all available models on the Ollama server."""
+        try:
+            models = self._client.list()
+            return [m.get("name", "") for m in models.get("models", [])]
+        except Exception:
+            return []
