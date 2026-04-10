@@ -1,0 +1,16 @@
+# =============================================================================
+# Development Overrides — Auto-loaded by `docker compose up`
+# Enables: live-reload, debug logging, test volume mount
+# =============================================================================
+
+services:
+  api:
+    build:
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ./app:/app/app          # Live code reload
+      - ./tests:/app/tests      # Tests accessible inside container
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - LOG_LEVEL=DEBUG
+      - APP_ENV=development

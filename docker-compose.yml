@@ -1,0 +1,62 @@
+# =============================================================================
+# Secure RAG MVP — Docker Compose
+# RTX 3050 GPU-accelerated configuration
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Ollama — Local LLM server with NVIDIA GPU passthrough
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # NVIDIA RTX 3050 GPU passthrough
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ---------------------------------------------------------------------------
+  # API — FastAPI application server
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    container_name: rag-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./sample_docs:/app/sample_docs:ro
+      - ./redteam_docs:/app/redteam_docs:ro
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_PERSIST_DIR=/app/data/chroma
+      - SQLITE_PATH=/app/data/sqlite/app.db
+      - LOG_DIR=/app/data/logs
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
