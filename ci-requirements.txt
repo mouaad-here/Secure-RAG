@@ -1,0 +1,33 @@
+# =============================================================================
+# CI-only requirements — lightweight install for lint + unit tests.
+# Does NOT include Ollama, ChromaDB, or unstructured (require live services).
+# =============================================================================
+
+# --- API Framework (needed for app/__init__ imports) ---
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20
+
+# --- Document Processing (used by loader.py / unit tests) ---
+pypdf==5.4.0
+
+# --- Text Splitting ---
+langchain-text-splitters==0.3.8
+
+# --- Configuration ---
+pydantic==2.11.1
+pydantic-settings==2.8.1
+
+# --- Security ---
+tldextract==5.2.0
+
+# --- Logging ---
+structlog==25.1.0
+
+# --- Testing ---
+pytest==8.3.5
+pytest-asyncio==0.25.3
+httpx==0.28.1
+
+# --- Code Quality ---
+ruff==0.11.4
