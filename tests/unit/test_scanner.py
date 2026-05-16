@@ -61,3 +61,11 @@ class TestSecurityScanner:
         result = self.scanner.scan(text)
         assert result.trust_score < 0.3
         assert len(result.flags) >= 2
+
+    def test_high_entropy_detected(self):
+        """High entropy obfuscated payloads should be flagged."""
+        # A string of 64 unique characters has a Shannon entropy of exactly 6.0 (which is > 5.5 threshold)
+        text = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" * 5
+        result = self.scanner.scan(text)
+        assert "HIGH_ENTROPY" in result.flags
+        assert result.trust_score < 0.7

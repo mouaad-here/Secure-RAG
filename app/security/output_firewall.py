@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 import tldextract
 
 from app.config import get_settings
+from app.security.patterns import LEAKED_INSTRUCTION_PATTERNS
 
 
 @dataclass
@@ -32,13 +33,7 @@ class OutputFirewall:
     3. Groundedness — basic check that answer relates to context
     """
 
-    LEAKED_INSTRUCTION_PATTERNS = [
-        re.compile(r"(my|the)\s+(system\s+)?instructions?\s+(are|say|tell)", re.I),
-        re.compile(r"I\s+(am|was)\s+(instructed|told|programmed)\s+to", re.I),
-        re.compile(r"my\s+prompt\s+(is|says|contains)", re.I),
-        re.compile(r"STRICT\s+RULES", re.I),
-        re.compile(r"NEVER\s+VIOLATE", re.I),
-    ]
+    # Patterns are imported from app.security.patterns
 
     def __init__(self):
         settings = get_settings()
@@ -120,7 +115,7 @@ class OutputFirewall:
         flags = []
         details = []
 
-        for pattern in self.LEAKED_INSTRUCTION_PATTERNS:
+        for pattern in LEAKED_INSTRUCTION_PATTERNS:
             if pattern.search(text):
                 flags.append("LEAKED_INSTRUCTIONS")
                 details.append(f"Possible prompt leak detected: {pattern.pattern}")

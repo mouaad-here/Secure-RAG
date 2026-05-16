@@ -13,7 +13,7 @@
 |-------|-------|
 | **Current Phase** | Phase 3 — Security Scanner |
 | **Phase Branch** | `feature/security-scan` |
-| **Overall Progress** | 2 / 8 phases complete |
+| **Overall Progress** | 3 / 8 phases complete |
 | **MVP Tag** | Not yet reached |
 | **Last Updated** | 2026-05-15 |
 | **Last Session** | Phase 0 complete — CI workflow added, all units verified |
@@ -112,17 +112,17 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 
 | # | Unit | Status | Notes |
 |---|------|--------|-------|
-| 3.1 | `security/patterns.py` — all regex patterns | ⬜ | |
-| 3.2 | `security/scanner.py` — injection pattern detector | ⬜ | |
-| 3.3 | `security/scanner.py` — URL extractor + allowlist check | ⬜ | |
-| 3.4 | `security/scanner.py` — entropy anomaly check | ⬜ | |
-| 3.5 | `security/scanner.py` — trust score aggregation | ⬜ | |
-| 3.6 | Wire scanner into ingestion pipeline (Phase 1 update) | ⬜ | |
-| 3.7 | JSONL audit logging for scan events | ⬜ | |
-| 3.8 | Unit tests: `test_scanner.py` (3 TP + 3 TN per check) | ⬜ | |
-| 3.9 | Manual test: ingest all 5 redteam_docs, verify low scores | ⬜ | |
+| 3.1 | `security/patterns.py` — all regex patterns | ✅ | |
+| 3.2 | `security/scanner.py` — injection pattern detector | ✅ | |
+| 3.3 | `security/scanner.py` — URL extractor + allowlist check | ✅ | |
+| 3.4 | `security/scanner.py` — entropy anomaly check | ✅ | |
+| 3.5 | `security/scanner.py` — trust score aggregation | ✅ | |
+| 3.6 | Wire scanner into ingestion pipeline (Phase 1 update) | ✅ | |
+| 3.7 | JSONL audit logging for scan events | ✅ | |
+| 3.8 | Unit tests: `test_scanner.py` (3 TP + 3 TN per check) | ✅ | |
+| 3.9 | Manual test: ingest all 5 redteam_docs, verify low scores | ✅ | |
 
-**Phase 3 Status:** 🔄 In Progress
+**Phase 3 Status:** ✅ Complete
 
 ---
 

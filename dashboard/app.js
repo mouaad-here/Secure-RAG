@@ -47,6 +47,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.getElementById(panelId)?.classList.add('active');
     if (btn.dataset.panel === 'documents') loadDocuments();
     if (btn.dataset.panel === 'status') refreshHealth();
+    if (btn.dataset.panel === 'audit') loadAuditLogs();
   });
 });
 
@@ -353,3 +354,47 @@ async function loadDocuments() {
 
 $('filter-status').addEventListener('change', loadDocuments);
 $('refresh-docs-btn').addEventListener('click', loadDocuments);
+
+// ── Security Audit Logs ───────────────────────────────────────
+async function loadAuditLogs() {
+  const grid = $('audit-grid');
+  grid.innerHTML = '<div class="doc-empty">Loading audit logs…</div>';
+
+  try {
+    const res = await fetch(`${API}/api/v1/audit-logs?limit=50`);
+    const data = await res.json();
+
+    if (!data.events?.length) {
+      grid.innerHTML = '<div class="doc-empty">No security events logged yet.</div>';
+      return;
+    }
+
+    grid.innerHTML = data.events.map(ev => `
+      <div class="doc-card" style="border-left: 4px solid ${ev.trust_score < 1.0 ? 'var(--danger)' : 'var(--success)'}">
+        <div class="doc-card-header">
+          <span class="doc-filename">📄 ${escapeHtml(ev.filename)}</span>
+          <span class="trust-badge ${ev.action_taken === 'quarantine' ? 'quarantine' : 'trusted'}">${escapeHtml(ev.action_taken.toUpperCase())}</span>
+        </div>
+        <div class="doc-meta">
+          <span class="doc-meta-item"><strong>Score:</strong> ${ev.trust_score.toFixed(2)}</span>
+          <span class="doc-meta-item"><strong>Time:</strong> ${new Date(ev.timestamp * 1000).toLocaleString()}</span>
+        </div>
+        ${ev.flags.length ? `
+          <div style="margin-top: 10px; font-size: 12px;">
+            <strong>Flags Triggered:</strong>
+            <div style="color: var(--danger); font-family: var(--mono); margin-top: 4px;">
+              ${ev.flags.map(f => `<div>⚠️ ${escapeHtml(f)}</div>`).join('')}
+            </div>
+            <div style="color: #888; font-family: var(--mono); margin-top: 4px; padding-left: 8px; border-left: 2px solid #444;">
+              ${ev.details.map(d => `<div>${escapeHtml(d)}</div>`).join('')}
+            </div>
+          </div>
+        ` : '<div style="margin-top: 10px; font-size: 12px; color: var(--success);">✅ Clean Scan</div>'}
+      </div>
+    `).join('');
+  } catch {
+    grid.innerHTML = '<div class="doc-empty">⚠️ Could not fetch audit logs.</div>';
+  }
+}
+
+$('refresh-audit-btn').addEventListener('click', loadAuditLogs);

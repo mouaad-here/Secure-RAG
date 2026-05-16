@@ -33,6 +33,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         <span>Library</span>
       </button>
+      <button class="nav-btn" data-panel="audit" id="nav-audit" title="Security Audit Logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        <span>Audit</span>
+      </button>
       <button class="nav-btn" data-panel="status" id="nav-status" title="System Status">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
         <span>Status</span>
@@ -182,6 +186,22 @@
       </div>
     </section>
 
+    <!-- ── Panel: Security Audit Logs ─────────────────────── -->
+    <section class="panel" id="panel-audit">
+      <div class="panel-header-row">
+        <div>
+          <h2>Security Audit Logs</h2>
+          <p class="panel-sub">Real-time log of document scans and detected prompt injections.</p>
+        </div>
+        <div class="lib-controls">
+          <button class="btn-secondary" id="refresh-audit-btn">Refresh</button>
+        </div>
+      </div>
+      <div class="doc-grid" id="audit-grid">
+        <div class="doc-empty">Loading audit logs...</div>
+      </div>
+    </section>
+
     <!-- ── Panel: Status ───────────────────────────────────── -->
     <section class="panel" id="panel-status">
       <div class="panel-header">
@@ -225,8 +245,8 @@
           </div>
           <div class="sc-body">
             <div class="sc-title">Security Scanner</div>
-            <div class="sc-value">Phase 3 (upcoming)</div>
-            <div class="sc-badge pending">pending</div>
+            <div class="sc-value">Phase 3 (Active)</div>
+            <div class="sc-badge online">online</div>
           </div>
         </div>
       </div>
@@ -237,7 +257,7 @@
           <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 0 — Foundation & Docker</span><span class="phase-status">✅ Complete</span></div>
           <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 1 — Baseline Ingestion</span><span class="phase-status">✅ Complete</span></div>
           <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 2 — Baseline RAG</span><span class="phase-status">✅ Complete</span></div>
-          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 3 — Security Scanner</span><span class="phase-status">⬜ Next</span></div>
+          <div class="phase-item active"><span class="phase-dot"></span><span class="phase-name">Phase 3 — Security Scanner</span><span class="phase-status">🔄 In Progress</span></div>
           <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 4 — Quarantine & Trust</span><span class="phase-status">⬜ Upcoming</span></div>
           <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 5 — Output Firewall</span><span class="phase-status">⬜ Upcoming</span></div>
           <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 6 — Evaluation Harness</span><span class="phase-status">⬜ Upcoming</span></div>

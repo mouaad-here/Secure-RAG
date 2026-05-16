@@ -60,6 +60,24 @@ class DocumentListResponse(BaseModel):
     total: int
 
 
+class AuditEvent(BaseModel):
+    """Single security scan audit event."""
+    timestamp: float
+    event_type: str
+    doc_id: str
+    filename: str
+    trust_score: float
+    flags: List[str]
+    details: List[str]
+    action_taken: str
+
+
+class AuditLogResponse(BaseModel):
+    """List of recent audit events."""
+    events: List[AuditEvent]
+    total: int
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -125,6 +143,32 @@ async def ingest_document(
     chunks = chunker.chunk(normalized_text, doc.filename)
     metadata = MetadataBuilder.update_after_chunking(metadata, len(chunks))
 
+    # --- Step 4.5: Phase 3 — Security Scan ---
+    from app.security.scanner import SecurityScanner
+    from app.security.audit import AuditLogger
+    
+    scanner = SecurityScanner()
+    scan_results = scanner.scan_chunks([c.content for c in chunks])
+    
+    # Calculate overall trust score (minimum is safest)
+    min_score = min([res.trust_score for res in scan_results]) if scan_results else 1.0
+    all_flags = list(set(flag for res in scan_results for flag in res.flags))
+    all_details = [detail for res in scan_results for detail in res.details]
+    
+    trust_status = "trusted" if min_score >= settings.trust_threshold else "quarantine"
+    metadata.trust_score = min_score
+    metadata.trust_status = trust_status
+
+    # Log to JSONL Audit Log
+    AuditLogger().log_scan_event(
+        doc_id=metadata.doc_id,
+        filename=metadata.filename,
+        trust_score=min_score,
+        flags=all_flags,
+        details=all_details,
+        action_taken=trust_status
+    )
+
     # --- Step 5: Phase 2 — embed + store in ChromaDB (if Ollama available) ---
     _try_embed_and_store(metadata, chunks, settings)
 
@@ -187,23 +231,24 @@ def _try_embed_and_store(metadata: DocumentMetadata, chunks: list, settings) -> 
             for c in chunks
         ]
 
-        trusted_store = TrustedStore()
-        trusted_store.add_chunks(
-            ids=ids,
-            documents=texts,
-            embeddings=embeddings,
-            metadatas=metadatas,
-        )
-
-        metadata.trust_score = 1.0
-        metadata.trust_status = "trusted"
-
-        logger.info("chunks_embedded", doc_id=metadata.doc_id, count=len(chunks))
+        # If quarantined, we skip adding to the TrustedStore for now
+        # Phase 4 will implement the QuarantineStore.
+        if metadata.trust_status == "trusted":
+            trusted_store = TrustedStore()
+            trusted_store.add_chunks(
+                ids=ids,
+                documents=texts,
+                embeddings=embeddings,
+                metadatas=metadatas,
+            )
+            logger.info("chunks_embedded_trusted", doc_id=metadata.doc_id, count=len(chunks))
+        else:
+            logger.info("chunks_quarantined_skip_trusted", doc_id=metadata.doc_id, count=len(chunks))
 
     except Exception as exc:
         # Ollama not running — graceful degradation
-        metadata.trust_score = 1.0
-        metadata.trust_status = "pending"
+        if metadata.trust_status == "trusted":
+            metadata.trust_status = "pending"
         logger.warning("embedding_skipped", doc_id=metadata.doc_id, reason=str(exc))
 
 
@@ -235,3 +280,35 @@ async def get_document(doc_id: str) -> DocumentSummary:
         raise HTTPException(status_code=404, detail={"error": "not_found", "doc_id": doc_id})
 
     return _build_summary(record)
+
+
+@router.get("/audit-logs", response_model=AuditLogResponse, summary="Get security scan audit logs")
+async def get_audit_logs(limit: int = Query(50, description="Max number of logs to return")) -> AuditLogResponse:
+    """Retrieve the most recent security scan audit logs."""
+    import json
+    import os
+    from app.config import get_settings
+    
+    settings = get_settings()
+    log_file = os.path.join(settings.log_dir, "scan_audit.jsonl")
+    
+    events = []
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, "r", encoding="utf-8") as f:
+                # Read all lines, but we only want the most recent `limit` lines
+                lines = f.readlines()
+                for line in reversed(lines):
+                    if not line.strip():
+                        continue
+                    if len(events) >= limit:
+                        break
+                    try:
+                        data = json.loads(line)
+                        events.append(AuditEvent(**data))
+                    except Exception:
+                        pass
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail={"error": "log_read_failed", "message": str(exc)})
+            
+    return AuditLogResponse(events=events, total=len(events))

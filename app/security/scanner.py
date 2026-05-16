@@ -4,11 +4,18 @@ Detects prompt injection attempts and suspicious content in documents.
 Computes a trust score (0.0 to 1.0) per chunk.
 """
 
+import math
 import re
 from typing import List, Tuple
 from dataclasses import dataclass, field
 
 import tldextract
+
+from app.security.patterns import (
+    DIRECT_INJECTION_PATTERNS,
+    INDIRECT_INJECTION_PATTERNS,
+    JAILBREAK_PATTERNS,
+)
 
 
 @dataclass
@@ -30,33 +37,7 @@ class SecurityScanner:
     4. Jailbreak patterns (roleplay, persona switching)
     """
 
-    # --- Direct injection patterns ---
-    DIRECT_INJECTION_PATTERNS = [
-        re.compile(r"ignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|rules?|prompts?)", re.I),
-        re.compile(r"disregard\s+(all\s+)?(previous|prior|above)", re.I),
-        re.compile(r"forget\s+(everything|all|your)\s+(you|instructions?|rules?)", re.I),
-        re.compile(r"you\s+are\s+now\s+", re.I),
-        re.compile(r"new\s+instructions?:", re.I),
-        re.compile(r"system\s*prompt:", re.I),
-        re.compile(r"override\s+(previous|all|system)", re.I),
-    ]
-
-    # --- Indirect injection patterns ---
-    INDIRECT_INJECTION_PATTERNS = [
-        re.compile(r"when\s+asked\s+about\s+.+,?\s+(respond|say|answer|reply)\s+with", re.I),
-        re.compile(r"always\s+(respond|say|answer|reply)\s+(with|that)", re.I),
-        re.compile(r"if\s+(the\s+)?user\s+asks?\s+", re.I),
-        re.compile(r"instead\s+of\s+.+,?\s+(say|respond|answer)", re.I),
-    ]
-
-    # --- Jailbreak patterns ---
-    JAILBREAK_PATTERNS = [
-        re.compile(r"(pretend|imagine|act\s+as\s+if)\s+you\s+are", re.I),
-        re.compile(r"roleplay\s+as", re.I),
-        re.compile(r"reveal\s+(your\s+)?(system\s+)?prompt", re.I),
-        re.compile(r"DAN\s+mode", re.I),
-        re.compile(r"developer\s+mode\s+(enabled|on)", re.I),
-    ]
+    # Patterns are imported from app.security.patterns
 
     # --- Scoring weights (single hit drives score below 0.7 threshold) ---
     WEIGHTS = {
@@ -64,6 +45,7 @@ class SecurityScanner:
         "indirect_injection": 0.35, # 1 hit → score 0.65
         "jailbreak": 0.35,          # 1 hit → score 0.65
         "suspicious_url": 0.15,
+        "high_entropy": 0.35,       # Detects base64/obfuscation
     }
 
     def __init__(self, url_allowlist: set | None = None):
@@ -86,21 +68,21 @@ class SecurityScanner:
         penalty = 0.0
 
         # Check direct injection
-        hits, msgs = self._check_patterns(text, self.DIRECT_INJECTION_PATTERNS, "DIRECT_INJECTION")
+        hits, msgs = self._check_patterns(text, DIRECT_INJECTION_PATTERNS, "DIRECT_INJECTION")
         if hits > 0:
             penalty += self.WEIGHTS["direct_injection"] * min(hits, 3)
             flags.append("DIRECT_INJECTION")
             details.extend(msgs)
 
         # Check indirect injection
-        hits, msgs = self._check_patterns(text, self.INDIRECT_INJECTION_PATTERNS, "INDIRECT_INJECTION")
+        hits, msgs = self._check_patterns(text, INDIRECT_INJECTION_PATTERNS, "INDIRECT_INJECTION")
         if hits > 0:
             penalty += self.WEIGHTS["indirect_injection"] * min(hits, 3)
             flags.append("INDIRECT_INJECTION")
             details.extend(msgs)
 
         # Check jailbreak
-        hits, msgs = self._check_patterns(text, self.JAILBREAK_PATTERNS, "JAILBREAK")
+        hits, msgs = self._check_patterns(text, JAILBREAK_PATTERNS, "JAILBREAK")
         if hits > 0:
             penalty += self.WEIGHTS["jailbreak"] * min(hits, 3)
             flags.append("JAILBREAK")
@@ -112,6 +94,13 @@ class SecurityScanner:
             penalty += self.WEIGHTS["suspicious_url"] * min(url_hits, 3)
             flags.append("SUSPICIOUS_URL")
             details.extend(url_msgs)
+
+        # Check entropy (obfuscation detection)
+        entropy = self._calculate_entropy(text)
+        if entropy > 5.5:
+            penalty += self.WEIGHTS["high_entropy"]
+            flags.append("HIGH_ENTROPY")
+            details.append(f"HIGH_ENTROPY: Shannon entropy is {entropy:.2f} (threshold 5.5)")
 
         trust_score = max(0.0, min(1.0, 1.0 - penalty))
 
@@ -156,3 +145,20 @@ class SecurityScanner:
                 messages.append(f"SUSPICIOUS_URL: '{url}' (domain: {domain} not in allowlist)")
 
         return hits, messages
+
+    def _calculate_entropy(self, text: str) -> float:
+        """Calculate Shannon entropy to detect heavily obfuscated text."""
+        if not text:
+            return 0.0
+        
+        char_counts = {}
+        for char in text:
+            char_counts[char] = char_counts.get(char, 0) + 1
+            
+        entropy = 0.0
+        text_len = len(text)
+        for count in char_counts.values():
+            p = count / text_len
+            entropy -= p * math.log2(p)
+            
+        return entropy
