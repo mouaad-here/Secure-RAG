@@ -76,20 +76,14 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
             detail={"error": "retrieval_failed", "message": str(exc)},
         )
 
-    # --- Step 2: Handle no context ---
-    if not chunks:
-        return QueryResponse(
-            answer="I don't have enough information to answer that based on the available documents.",
-            citations=[],
-            security_flags=[],
-            model_used=settings.llm_model,
-            context_chunks_used=0,
-        )
-
-    # --- Step 3: Build prompt ---
+    # --- Step 2 & 3: Build prompt (with or without context) ---
     try:
         from app.generation.prompt_builder import PromptBuilder
-        prompt = PromptBuilder().build(request.question, chunks)
+        builder = PromptBuilder()
+        if not chunks:
+            prompt = builder.build_without_context(request.question)
+        else:
+            prompt = builder.build(request.question, chunks)
     except Exception as exc:
         logger.error("prompt_build_failed", error=str(exc))
         raise HTTPException(status_code=500, detail={"error": "prompt_failed", "message": str(exc)})

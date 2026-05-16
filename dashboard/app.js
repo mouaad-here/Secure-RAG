@@ -186,8 +186,12 @@ async function sendQuestion() {
 
       if (data.citations?.length) {
         const cited = data.citations.filter(c => c.cited_in_response !== false);
-        const chips = (cited.length ? cited : data.citations)
-          .map(c => `<span class="citation-chip">📄 ${escapeHtml(c.document)}</span>`)
+        const sourceList = cited.length ? cited : data.citations;
+        // Deduplicate by document name
+        const uniqueDocs = [...new Set(sourceList.map(c => c.document || c.source_document))].filter(Boolean);
+        
+        const chips = uniqueDocs
+          .map(doc => `<span class="citation-chip">📄 ${escapeHtml(doc)}</span>`)
           .join('');
         html += `<div class="citations-block">${chips}</div>`;
       }

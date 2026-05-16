@@ -42,6 +42,7 @@ class Retriever:
         query: str,
         top_k: Optional[int] = None,
         include_quarantine: bool = False,
+        max_distance: float = 0.5,
     ) -> List[RetrievedChunk]:
         """
         Retrieve relevant chunks for a query.
@@ -71,7 +72,11 @@ class Retriever:
 
         # Sort by relevance score (lower distance = more relevant)
         results.sort(key=lambda c: c.relevance_score)
-        return results[:k]
+        
+        # Filter by distance threshold
+        filtered_results = [r for r in results if r.relevance_score <= max_distance]
+        
+        return filtered_results[:k]
 
     def _query_store(
         self,

@@ -11,9 +11,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 1 — Baseline Ingestion + Phase 2 — Baseline RAG |
-| **Phase Branch** | `feature/ingestion` → `feature/baseline-rag` |
-| **Overall Progress** | 1 / 8 phases complete |
+| **Current Phase** | Phase 3 — Security Scanner |
+| **Phase Branch** | `feature/security-scan` |
+| **Overall Progress** | 2 / 8 phases complete |
 | **MVP Tag** | Not yet reached |
 | **Last Updated** | 2026-05-15 |
 | **Last Session** | Phase 0 complete — CI workflow added, all units verified |
@@ -101,7 +101,7 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 | 2.9 | Unit tests: `test_retriever.py` | ⬜ | |
 | 2.10 | Unit tests: `test_prompt_builder.py` | ⬜ | |
 
-**Phase 2 Status:** 🔄 In Progress
+**Phase 2 Status:** ✅ Complete
 
 ---
 
@@ -122,7 +122,7 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 | 3.8 | Unit tests: `test_scanner.py` (3 TP + 3 TN per check) | ⬜ | |
 | 3.9 | Manual test: ingest all 5 redteam_docs, verify low scores | ⬜ | |
 
-**Phase 3 Status:** ⬜ Not Started
+**Phase 3 Status:** 🔄 In Progress
 
 ---
 

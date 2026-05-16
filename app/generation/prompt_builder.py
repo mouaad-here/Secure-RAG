@@ -70,11 +70,16 @@ class PromptBuilder:
         )
 
     def build_without_context(self, question: str) -> str:
-        """Build a prompt when no context is available."""
-        return f"""{self.system_prompt}
+        """Build a strict fallback prompt when no context is available."""
+        fallback_prompt = f"""You are a helpful company assistant.
+        
+STRICT RULES:
+1. The user has asked a question or said something, but there are NO company documents relevant to their query.
+2. If the user is simply saying a conversational greeting (e.g., "Hello", "Hi", "Thank you", "How are you"), respond naturally and politely as a company assistant.
+3. If the user asks ANY OTHER QUESTION (e.g., general knowledge, coding, out-of-scope topics), you MUST refuse to answer. State clearly: "I don't have enough information to answer that based on the available company documents."
+4. Do not apologize excessively.
 
-No relevant documents were found in the knowledge base.
+USER QUERY: {question}
 
-QUESTION: {question}
-
-ANSWER: I don't have enough information to answer that based on company documents."""
+RESPONSE:"""
+        return fallback_prompt
