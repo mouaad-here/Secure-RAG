@@ -231,8 +231,7 @@ def _try_embed_and_store(metadata: DocumentMetadata, chunks: list, settings) -> 
             for c in chunks
         ]
 
-        # If quarantined, we skip adding to the TrustedStore for now
-        # Phase 4 will implement the QuarantineStore.
+        # Route to appropriate store based on trust status
         if metadata.trust_status == "trusted":
             trusted_store = TrustedStore()
             trusted_store.add_chunks(
@@ -243,7 +242,15 @@ def _try_embed_and_store(metadata: DocumentMetadata, chunks: list, settings) -> 
             )
             logger.info("chunks_embedded_trusted", doc_id=metadata.doc_id, count=len(chunks))
         else:
-            logger.info("chunks_quarantined_skip_trusted", doc_id=metadata.doc_id, count=len(chunks))
+            from app.storage.chroma_quarantine import QuarantineStore
+            quarantine_store = QuarantineStore()
+            quarantine_store.add_chunks(
+                ids=ids,
+                documents=texts,
+                embeddings=embeddings,
+                metadatas=metadatas,
+            )
+            logger.info("chunks_embedded_quarantine", doc_id=metadata.doc_id, count=len(chunks))
 
     except Exception as exc:
         # Ollama not running — graceful degradation

@@ -1,7 +1,6 @@
 """Unit tests for app/ingestion/chunker.py"""
 from __future__ import annotations
 
-import pytest
 from app.ingestion.chunker import TextChunk, TextChunker
 
 

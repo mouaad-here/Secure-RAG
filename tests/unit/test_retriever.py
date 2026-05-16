@@ -1,12 +1,11 @@
 """Unit tests for app/retrieval/retriever.py — all dependencies mocked."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import List
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.retrieval.retriever import Retriever, RetrievedChunk
+from app.retrieval.retriever import Retriever
 
 
 def _make_chroma_result(ids: List[str], docs: List[str], distances: List[float]) -> dict:

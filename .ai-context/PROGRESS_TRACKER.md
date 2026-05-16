@@ -11,9 +11,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 3 — Security Scanner |
-| **Phase Branch** | `feature/security-scan` |
-| **Overall Progress** | 3 / 8 phases complete |
+| **Current Phase** | Phase 4 — Quarantine & Trust Filter |
+| **Phase Branch** | `feature/quarantine-filter` |
+| **Overall Progress** | 4 / 8 phases complete |
 | **MVP Tag** | Not yet reached |
 | **Last Updated** | 2026-05-15 |
 | **Last Session** | Phase 0 complete — CI workflow added, all units verified |
@@ -134,15 +134,15 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 
 | # | Unit | Status | Notes |
 |---|------|--------|-------|
-| 4.1 | `storage/chroma_quarantine.py` — separate collection | ⬜ | |
-| 4.2 | Routing logic: trust score → trusted vs quarantine | ⬜ | |
-| 4.3 | `retrieval/filters.py` — per-chunk risk filter on retrieved | ⬜ | |
-| 4.4 | Verify retriever NEVER queries quarantine (test) | ⬜ | |
-| 4.5 | Update `GET /documents` to show quarantine status | ⬜ | |
-| 4.6 | Unit tests: quarantine routing | ⬜ | |
-| 4.7 | Integration test: poisoned content not in any `/ask` response | ⬜ | |
+| 4.1 | `storage/chroma_quarantine.py` — separate collection | ✅ | (Already created in boilerplate) |
+| 4.2 | Routing logic: trust score → trusted vs quarantine | ✅ | |
+| 4.3 | `retrieval/filters.py` — per-chunk risk filter on retrieved | ✅ | |
+| 4.4 | Verify retriever NEVER queries quarantine (test) | ✅ | |
+| 4.5 | Update `GET /documents` to show quarantine status | ✅ | (Handled in Phase 1/3) |
+| 4.6 | Unit tests: quarantine routing | ✅ | |
+| 4.7 | Integration test: poisoned content not in any `/ask` response | ✅ | |
 
-**Phase 4 Status:** ⬜ Not Started
+**Phase 4 Status:** ✅ Complete
 
 ---
 

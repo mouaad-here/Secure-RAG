@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
-import pytest
 from app.generation.prompt_builder import SYSTEM_PROMPT, PromptBuilder
 
 

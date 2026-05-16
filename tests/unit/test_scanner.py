@@ -2,8 +2,7 @@
 Unit Tests — Security Scanner
 """
 
-import pytest
-from app.security.scanner import SecurityScanner, ScanResult
+from app.security.scanner import SecurityScanner
 
 
 class TestSecurityScanner:

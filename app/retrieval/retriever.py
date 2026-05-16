@@ -76,7 +76,12 @@ class Retriever:
         # Filter by distance threshold
         filtered_results = [r for r in results if r.relevance_score <= max_distance]
         
-        return filtered_results[:k]
+        # --- Phase 4: Defense-in-Depth Filter ---
+        from app.retrieval.filters import TrustFilter
+        filter_engine = TrustFilter()
+        safe_results = filter_engine.filter_chunks(filtered_results)
+        
+        return safe_results[:k]
 
     def _query_store(
         self,

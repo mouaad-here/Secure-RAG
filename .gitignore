@@ -44,3 +44,6 @@ logs/
 # Model files (too large)
 *.bin
 *.gguf
+
+# Presentation / Export docs
+presentation/

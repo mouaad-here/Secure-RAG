@@ -1,45 +1,34 @@
 """
 Secure RAG MVP — Retrieval Filters
-Trust and risk filters applied to retrieved chunks before generation.
+Secondary layer of defense to ensure untrusted chunks never reach the LLM.
 """
 
 from typing import List
-
-from app.retrieval.retriever import RetrievedChunk
 from app.config import get_settings
+from app.retrieval.retriever import RetrievedChunk
 
-
-class RetrievalFilters:
+class TrustFilter:
     """
-    Apply post-retrieval filtering to ensure only safe content
-    reaches the generation layer.
+    Defense-in-depth filter for retrieved chunks.
+    Even though the retriever queries the TrustedStore exclusively,
+    this filter ensures no chunk with a low trust score is returned,
+    protecting against database misconfigurations or manual tampering.
     """
 
     def __init__(self):
-        settings = get_settings()
-        self.trust_threshold = settings.trust_threshold
+        self.settings = get_settings()
 
-    def filter_by_trust(
-        self, chunks: List[RetrievedChunk]
-    ) -> List[RetrievedChunk]:
-        """Remove any quarantine chunks that may have leaked through."""
-        return [c for c in chunks if c.trust_level == "trusted"]
-
-    def filter_by_relevance(
-        self,
-        chunks: List[RetrievedChunk],
-        max_distance: float = 1.5,
-    ) -> List[RetrievedChunk]:
-        """Remove chunks that are too dissimilar to the query."""
-        return [c for c in chunks if c.relevance_score <= max_distance]
-
-    def apply_all(
-        self,
-        chunks: List[RetrievedChunk],
-        allow_quarantine: bool = False,
-    ) -> List[RetrievedChunk]:
-        """Apply all filters in sequence."""
-        if not allow_quarantine:
-            chunks = self.filter_by_trust(chunks)
-        chunks = self.filter_by_relevance(chunks)
-        return chunks
+    def filter_chunks(self, chunks: List[RetrievedChunk]) -> List[RetrievedChunk]:
+        """
+        Filter out any chunks that fall below the trust threshold.
+        """
+        safe_chunks = []
+        for chunk in chunks:
+            # If trust_score is missing, we assume 1.0 (safe) for backward compatibility
+            # with Phase 1 chunks, though all Phase 3+ chunks will have it.
+            score = chunk.metadata.get("trust_score", 1.0)
+            
+            if score >= self.settings.trust_threshold:
+                safe_chunks.append(chunk)
+                
+        return safe_chunks

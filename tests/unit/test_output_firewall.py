@@ -2,8 +2,7 @@
 Unit Tests — Output Firewall
 """
 
-import pytest
-from app.security.output_firewall import OutputFirewall, FirewallResult
+from app.security.output_firewall import OutputFirewall
 
 
 class TestOutputFirewall:

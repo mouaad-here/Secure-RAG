@@ -1,10 +1,6 @@
 """Unit tests for app/storage/sqlite_store.py"""
 from __future__ import annotations
 
-import os
-import tempfile
-
-import pytest
 from app.ingestion.metadata import DocumentMetadata, MetadataBuilder
 from app.storage.sqlite_store import SQLiteStore
 
