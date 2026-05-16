@@ -5,7 +5,6 @@ Uses pydantic-settings to load from .env with validation.
 
 from pydantic_settings import BaseSettings
 from pydantic import Field
-from typing import List
 from functools import lru_cache
 
 

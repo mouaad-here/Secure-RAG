@@ -3,8 +3,7 @@ Unit Tests — Quarantine and Trust Filter
 Verifies that malicious payloads are physically isolated from the retriever.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from app.ingestion.metadata import DocumentMetadata
 from app.ingestion.chunker import TextChunk

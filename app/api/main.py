@@ -27,13 +27,13 @@ async def lifespan(app: FastAPI):
     _start_time = time.time()
 
     settings = get_settings()
-    print(f"🚀 Secure RAG MVP starting...")
+    print("🚀 Secure RAG MVP starting...")
     print(f"   Environment:  {settings.app_env}")
     print(f"   LLM Model:    {settings.llm_model}")
     print(f"   Embed Model:  {settings.embedding_model}")
     print(f"   Ollama Host:  {settings.ollama_host}")
     print(f"   Context:      {settings.llm_context_window} tokens")
-    print(f"   GPU:          NVIDIA RTX 3050 (CUDA)")
+    print("   GPU:          NVIDIA RTX 3050 (CUDA)")
 
     yield
 

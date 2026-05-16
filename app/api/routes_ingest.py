@@ -10,10 +10,10 @@ from typing import List, Optional
 
 import structlog
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.config import get_settings
-from app.exceptions import DocumentLoadError, StorageError, UnsupportedFileTypeError
+from app.exceptions import DocumentLoadError, UnsupportedFileTypeError
 from app.ingestion.chunker import TextChunker
 from app.ingestion.loader import DocumentLoader
 from app.ingestion.metadata import DocumentMetadata, MetadataBuilder
