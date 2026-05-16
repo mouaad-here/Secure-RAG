@@ -148,7 +148,7 @@ class OutputFirewall:
         response_words = set(response.lower().split())
         overlap = context_words.intersection(response_words)
 
-        if len(overlap) < 3 and len(context_words) > 10:
+        if len(overlap) < 3 and len(context_words) > 4:
             flags.append("LOW_GROUNDEDNESS")
             details.append(
                 f"Response has low overlap with context "

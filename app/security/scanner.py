@@ -58,11 +58,11 @@ class SecurityScanner:
         re.compile(r"developer\s+mode\s+(enabled|on)", re.I),
     ]
 
-    # --- Scoring weights ---
+    # --- Scoring weights (single hit drives score below 0.7 threshold) ---
     WEIGHTS = {
-        "direct_injection": 0.4,
-        "indirect_injection": 0.25,
-        "jailbreak": 0.2,
+        "direct_injection": 0.40,   # 1 hit → score 0.60
+        "indirect_injection": 0.35, # 1 hit → score 0.65
+        "jailbreak": 0.35,          # 1 hit → score 0.65
         "suspicious_url": 0.15,
     }
 
