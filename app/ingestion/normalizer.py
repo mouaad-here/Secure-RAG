@@ -1,7 +1,10 @@
 """
-Secure RAG MVP — Text Normalizer
-Cleans and normalizes extracted text for consistent processing.
+app/ingestion/normalizer.py — Text normalization for extracted document content.
+
+Layer: ingestion
+Imports allowed: stdlib only
 """
+from __future__ import annotations
 
 import re
 import unicodedata

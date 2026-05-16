@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure RAG — Dashboard</title>
+  <meta name="description" content="Secure RAG MVP — defense-in-depth local RAG system dashboard for document ingestion, querying, and security monitoring." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <span class="logo-text">SecureRAG</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-panel="chat" id="nav-chat" title="Ask Questions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span>Ask</span>
+      </button>
+      <button class="nav-btn" data-panel="upload" id="nav-upload" title="Upload Documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Upload</span>
+      </button>
+      <button class="nav-btn" data-panel="documents" id="nav-documents" title="Document Library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Library</span>
+      </button>
+      <button class="nav-btn" data-panel="status" id="nav-status" title="System Status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
+        <span>Status</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="system-pulse" id="system-pulse">
+        <span class="pulse-dot"></span>
+        <span class="pulse-label">System Online</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ───────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Health Bar -->
+    <header class="health-bar">
+      <div class="health-title">
+        <h1>Secure RAG <span class="version-badge">v0.1</span></h1>
+      </div>
+      <div class="health-indicators" id="health-indicators">
+        <div class="indicator" id="ind-api">
+          <span class="ind-dot checking"></span>
+          <span class="ind-label">API</span>
+          <span class="ind-value" id="api-status">Checking…</span>
+        </div>
+        <div class="indicator" id="ind-ollama">
+          <span class="ind-dot checking"></span>
+          <span class="ind-label">Ollama</span>
+          <span class="ind-value" id="ollama-status">Checking…</span>
+        </div>
+        <div class="indicator" id="ind-docs">
+          <span class="ind-dot"></span>
+          <span class="ind-label">Documents</span>
+          <span class="ind-value" id="docs-count">—</span>
+        </div>
+      </div>
+      <button class="refresh-btn" id="refresh-health" title="Refresh status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+      </button>
+    </header>
+
+    <!-- ── Panel: Ask ──────────────────────────────────────── -->
+    <section class="panel active" id="panel-chat">
+      <div class="panel-header">
+        <h2>Ask a Question</h2>
+        <p class="panel-sub">Query your document corpus using the RAG pipeline</p>
+      </div>
+
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-welcome">
+            <div class="welcome-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>Ready to answer securely</h3>
+            <p>Upload documents first, then ask questions. All answers are grounded in your corpus and include citations.</p>
+            <div class="sample-questions">
+              <span class="sample-q" data-q="How many vacation days do employees get per year?">💼 Vacation days policy</span>
+              <span class="sample-q" data-q="What is the remote work policy?">🏠 Remote work policy</span>
+              <span class="sample-q" data-q="How do I submit an expense report?">🧾 Expense reports</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-controls">
+            <label class="top-k-label">
+              <span>Top-K chunks:</span>
+              <select id="top-k-select">
+                <option value="3">3</option>
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+          </div>
+          <div class="chat-input-row">
+            <textarea
+              id="question-input"
+              placeholder="Ask a question about your documents…"
+              rows="2"
+              maxlength="1000"
+            ></textarea>
+            <button class="send-btn" id="send-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <div class="char-count"><span id="char-count">0</span>/1000</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Panel: Upload ───────────────────────────────────── -->
+    <section class="panel" id="panel-upload">
+      <div class="panel-header">
+        <h2>Upload Document</h2>
+        <p class="panel-sub">Supported formats: PDF, Markdown (.md), Plain Text (.txt)</p>
+      </div>
+
+      <div class="upload-zone" id="upload-zone">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <p class="upload-hint">Drag & drop your file here, or <label class="upload-link" for="file-input">browse</label></p>
+        <p class="upload-formats">PDF · Markdown · Plain Text</p>
+        <input type="file" id="file-input" accept=".pdf,.md,.txt" hidden />
+      </div>
+
+      <div class="upload-form" id="upload-form" style="display:none">
+        <div class="selected-file" id="selected-file"></div>
+        <div class="form-field">
+          <label for="source-label">Source Label (optional)</label>
+          <input type="text" id="source-label" placeholder="e.g. hr-policies, it-docs" maxlength="64" />
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" id="clear-file-btn">Clear</button>
+          <button class="btn-primary" id="ingest-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Ingest Document
+          </button>
+        </div>
+      </div>
+
+      <div class="ingest-result" id="ingest-result" style="display:none"></div>
+    </section>
+
+    <!-- ── Panel: Document Library ────────────────────────── -->
+    <section class="panel" id="panel-documents">
+      <div class="panel-header-row">
+        <div>
+          <h2>Document Library</h2>
+          <p class="panel-sub">All ingested documents and their security status</p>
+        </div>
+        <div class="lib-controls">
+          <select id="filter-status" class="filter-select">
+            <option value="">All statuses</option>
+            <option value="trusted">Trusted</option>
+            <option value="quarantine">Quarantine</option>
+            <option value="pending">Pending</option>
+          </select>
+          <button class="btn-secondary" id="refresh-docs-btn">Refresh</button>
+        </div>
+      </div>
+      <div class="doc-grid" id="doc-grid">
+        <div class="doc-empty">No documents yet. Upload one to get started.</div>
+      </div>
+    </section>
+
+    <!-- ── Panel: Status ───────────────────────────────────── -->
+    <section class="panel" id="panel-status">
+      <div class="panel-header">
+        <h2>System Status</h2>
+        <p class="panel-sub">Real-time health of all system components</p>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" id="sc-api">
+          <div class="sc-icon api-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <div class="sc-body">
+            <div class="sc-title">FastAPI</div>
+            <div class="sc-value" id="api-detail">—</div>
+            <div class="sc-badge" id="api-badge">checking</div>
+          </div>
+        </div>
+        <div class="status-card" id="sc-ollama">
+          <div class="sc-icon ollama-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div class="sc-body">
+            <div class="sc-title">Ollama LLM</div>
+            <div class="sc-value" id="ollama-detail">—</div>
+            <div class="sc-badge" id="ollama-badge">checking</div>
+          </div>
+        </div>
+        <div class="status-card" id="sc-docs">
+          <div class="sc-icon docs-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="sc-body">
+            <div class="sc-title">Document Store</div>
+            <div class="sc-value" id="docs-detail">—</div>
+            <div class="sc-badge" id="docs-badge">ready</div>
+          </div>
+        </div>
+        <div class="status-card" id="sc-security">
+          <div class="sc-icon sec-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="sc-body">
+            <div class="sc-title">Security Scanner</div>
+            <div class="sc-value">Phase 3 (upcoming)</div>
+            <div class="sc-badge pending">pending</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-timeline">
+        <h3>Build Progress</h3>
+        <div class="timeline">
+          <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 0 — Foundation & Docker</span><span class="phase-status">✅ Complete</span></div>
+          <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 1 — Baseline Ingestion</span><span class="phase-status">✅ Complete</span></div>
+          <div class="phase-item done"><span class="phase-dot"></span><span class="phase-name">Phase 2 — Baseline RAG</span><span class="phase-status">✅ Complete</span></div>
+          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 3 — Security Scanner</span><span class="phase-status">⬜ Next</span></div>
+          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 4 — Quarantine & Trust</span><span class="phase-status">⬜ Upcoming</span></div>
+          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 5 — Output Firewall</span><span class="phase-status">⬜ Upcoming</span></div>
+          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 6 — Evaluation Harness</span><span class="phase-status">⬜ Upcoming</span></div>
+          <div class="phase-item upcoming"><span class="phase-dot"></span><span class="phase-name">Phase 7 — API Polish & Docs</span><span class="phase-status">⬜ Upcoming</span></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

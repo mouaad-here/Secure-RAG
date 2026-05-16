@@ -5,9 +5,11 @@ Main entry point with health check, CORS, and route registration.
 
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.api.routes_ingest import router as ingest_router
@@ -60,6 +62,11 @@ app.add_middleware(
 # --- Register routers ---
 app.include_router(ingest_router, prefix="/api/v1", tags=["Ingestion"])
 app.include_router(query_router, prefix="/api/v1", tags=["Query"])
+
+# --- Serve dashboard (if directory exists) ---
+_dashboard_dir = Path(__file__).parent.parent.parent / "dashboard"
+if _dashboard_dir.exists():
+    app.mount("/dashboard", StaticFiles(directory=str(_dashboard_dir), html=True), name="dashboard")
 
 
 # --- Health Check ---

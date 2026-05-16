@@ -3,6 +3,7 @@ Unit Tests — Document Loader
 """
 
 import pytest
+from app.exceptions import UnsupportedFileTypeError
 from app.ingestion.loader import DocumentLoader, LoadedDocument
 
 
@@ -31,12 +32,12 @@ class TestDocumentLoader:
 
     def test_reject_unsupported_type(self):
         """Reject unsupported file types."""
-        with pytest.raises(ValueError, match="Unsupported file type"):
+        with pytest.raises(UnsupportedFileTypeError):
             self.loader.load_from_bytes(b"data", "file.exe")
 
     def test_reject_no_extension(self):
         """Reject files without extensions."""
-        with pytest.raises(ValueError):
+        with pytest.raises(UnsupportedFileTypeError):
             self.loader.load_from_bytes(b"data", "noext")
 
     def test_metadata_fields(self):

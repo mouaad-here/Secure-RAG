@@ -1,7 +1,10 @@
 """
-Secure RAG MVP — Text Chunker
-Splits normalized text into overlapping chunks for embedding.
+app/ingestion/chunker.py — Text chunking using RecursiveCharacterTextSplitter.
+
+Layer: ingestion
+Imports allowed: config, stdlib, langchain_text_splitters
 """
+from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List

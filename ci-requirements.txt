@@ -7,6 +7,7 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
 python-multipart==0.0.20
+aiofiles==24.1.0
 
 # --- Document Processing (used by loader.py / unit tests) ---
 pypdf==5.4.0

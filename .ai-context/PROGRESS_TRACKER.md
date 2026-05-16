@@ -11,8 +11,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 1 — Baseline Ingestion |
-| **Phase Branch** | `feature/ingestion` |
+| **Current Phase** | Phase 1 — Baseline Ingestion + Phase 2 — Baseline RAG |
+| **Phase Branch** | `feature/ingestion` → `feature/baseline-rag` |
 | **Overall Progress** | 1 / 8 phases complete |
 | **MVP Tag** | Not yet reached |
 | **Last Updated** | 2026-05-15 |
@@ -78,7 +78,7 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 | 1.9 | Unit tests: `test_sqlite_store.py` | ⬜ | |
 | 1.10 | Add `GET /documents` + `GET /documents/{id}` | ⬜ | |
 
-**Phase 1 Status:** ⬜ Not Started
+**Phase 1 Status:** 🔄 In Progress
 
 ---
 
@@ -101,7 +101,7 @@ Legend: ✅ Done · 🔄 In Progress · ⬜ Not Started · ❌ Blocked
 | 2.9 | Unit tests: `test_retriever.py` | ⬜ | |
 | 2.10 | Unit tests: `test_prompt_builder.py` | ⬜ | |
 
-**Phase 2 Status:** ⬜ Not Started
+**Phase 2 Status:** 🔄 In Progress
 
 ---
 

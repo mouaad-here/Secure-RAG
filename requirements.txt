@@ -6,6 +6,7 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
 python-multipart==0.0.20
+aiofiles==24.1.0
 
 # --- LLM Client ---
 ollama==0.4.8

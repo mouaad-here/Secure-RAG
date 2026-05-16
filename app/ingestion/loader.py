@@ -1,12 +1,17 @@
 """
-Secure RAG MVP — Document Loader
-Handles loading PDF, Markdown, and plain text files.
+app/ingestion/loader.py — Document loader for PDF, Markdown, and plain text.
+
+Layer: ingestion
+Imports allowed: security/, config, stdlib
 """
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import datetime, timezone
+from typing import Optional
+
+from app.exceptions import DocumentLoadError, UnsupportedFileTypeError
 
 
 @dataclass
@@ -45,7 +50,9 @@ class DocumentLoader:
             text = content.decode("utf-8", errors="replace")
             page_count = None
         else:
-            raise ValueError(f"Unsupported file type: {file_ext}")
+            raise UnsupportedFileTypeError(
+                f"Unsupported file type: '{file_ext}'. Supported: {self.SUPPORTED_TYPES}"
+            )
 
         return LoadedDocument(
             filename=filename,
@@ -59,7 +66,7 @@ class DocumentLoader:
     def load_from_path(self, filepath: str, source_label: str = "unknown") -> LoadedDocument:
         """Load a document from a file path."""
         if not os.path.exists(filepath):
-            raise FileNotFoundError(f"File not found: {filepath}")
+            raise DocumentLoadError(f"File not found: {filepath}")
 
         with open(filepath, "rb") as f:
             content = f.read()
@@ -90,7 +97,7 @@ class DocumentLoader:
     def _validate_type(self, file_ext: str) -> None:
         """Validate file type is supported."""
         if file_ext not in self.SUPPORTED_TYPES:
-            raise ValueError(
+            raise UnsupportedFileTypeError(
                 f"Unsupported file type: '{file_ext}'. "
                 f"Supported: {self.SUPPORTED_TYPES}"
             )

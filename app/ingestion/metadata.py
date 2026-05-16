@@ -1,8 +1,12 @@
 """
-Secure RAG MVP — Document Metadata Builder
-Constructs metadata records for ingested documents.
-"""
+app/ingestion/metadata.py — Document metadata builder.
 
+Layer: ingestion
+Imports allowed: config, stdlib
+"""
+from __future__ import annotations
+
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional, List
@@ -36,7 +40,7 @@ class MetadataBuilder:
         page_count: Optional[int] = None,
     ) -> DocumentMetadata:
         """Create initial metadata for a newly loaded document."""
-        doc_id = f"{filename}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        doc_id = str(uuid.uuid4())
 
         return DocumentMetadata(
             doc_id=doc_id,

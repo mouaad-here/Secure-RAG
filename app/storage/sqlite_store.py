@@ -1,7 +1,10 @@
 """
-Secure RAG MVP — SQLite Metadata Store
-Persists document metadata, scan results, and audit logs.
+app/storage/sqlite_store.py — SQLite metadata and audit log store.
+
+Layer: storage
+Imports allowed: config, stdlib, sqlalchemy
 """
+from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
@@ -50,8 +53,10 @@ class SQLiteStore:
         settings = get_settings()
         self.db_path = db_path or settings.sqlite_path
 
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        # Ensure directory exists (guard: db_path may have no directory component)
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
 
         self.engine = create_engine(f"sqlite:///{self.db_path}", echo=False)
         Base.metadata.create_all(self.engine)
