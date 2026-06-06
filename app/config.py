@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     # --- Security ---
     trust_threshold: float = Field(default=0.7, description="Minimum trust score (0-1) for trusted collection")
     url_allowlist: str = Field(default="example.com,internal.company.com", description="Comma-separated allowed domains")
+    custom_sensitive_patterns: str = Field(default="", description="Comma-separated custom sensitive regex patterns or keywords to redact")
+    enable_ai_scanner: bool = Field(default=False, description="Whether to enable local LLM prompt injection verification")
     max_chunk_size: int = Field(default=500, description="Maximum chunk size in tokens")
     chunk_overlap: int = Field(default=50, description="Overlap between chunks")
 

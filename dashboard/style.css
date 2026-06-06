@@ -552,3 +552,125 @@ textarea#question-input::placeholder { color: var(--text-muted); }
   .health-indicators { gap: 12px; }
   .panel { padding: 16px; }
 }
+
+/* ── Mode Toggle Switch ─────────────────────────────────────── */
+.mode-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 4px 14px;
+  border-radius: 20px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.mode-toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  cursor: pointer;
+  user-select: none;
+}
+.mode-toggle-label.active {
+  color: var(--text-primary);
+}
+#mode-label-secure.active {
+  color: var(--emerald);
+  text-shadow: 0 0 8px var(--emerald-dim);
+}
+#mode-label-naive.active {
+  color: var(--amber);
+  text-shadow: 0 0 8px var(--amber-dim);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--text-muted);
+  transition: .3s;
+  border-radius: 20px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: var(--amber);
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* ── Naive Mode Overrides ────────────────────────────────────── */
+body.naive-mode {
+  --blue:         var(--amber);
+  --blue-dim:     var(--amber-dim);
+  --blue-glow:    rgba(245, 158, 11, 0.35);
+  --border:       rgba(245, 158, 11, 0.25);
+}
+
+body.naive-mode .logo-icon {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: var(--border);
+}
+
+body.naive-mode .system-pulse .pulse-dot {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+body.naive-mode .welcome-icon {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: var(--border);
+}
+
+/* Custom styles for Naive messages and badges */
+.msg-ai.msg-naive .msg-bubble {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.1);
+  background: rgba(30, 20, 10, 0.6) !important;
+}
+.msg-naive-badge {
+  font-size: 10px;
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+.trust-badge.naive_trusted {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+

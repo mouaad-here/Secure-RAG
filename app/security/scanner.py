@@ -48,10 +48,14 @@ class SecurityScanner:
         "high_entropy": 0.35,       # Detects base64/obfuscation
     }
 
-    def __init__(self, url_allowlist: set | None = None):
+    def __init__(self, url_allowlist: set | None = None, enable_ai: bool = False):
         from app.config import get_settings
         settings = get_settings()
         self.url_allowlist = url_allowlist or settings.url_allowlist_set
+        self.enable_ai = enable_ai
+        
+        from app.security.llm_scanner import LLMScanner
+        self.llm_scanner = LLMScanner()
 
     def scan(self, text: str) -> ScanResult:
         """
@@ -101,6 +105,18 @@ class SecurityScanner:
             penalty += self.WEIGHTS["high_entropy"]
             flags.append("HIGH_ENTROPY")
             details.append(f"HIGH_ENTROPY: Shannon entropy is {entropy:.2f} (threshold 5.5)")
+
+        # Check local LLM scanner if enabled
+        from app.config import get_settings
+        if self.enable_ai and get_settings().enable_ai_scanner:
+            llm_res = self.llm_scanner.scan_text(text)
+            if llm_res.is_malicious:
+                penalty += 0.40
+                flags.append("AI_INJECTION_DETECTED")
+                details.append(
+                    f"AI_INJECTION_DETECTED: LLM classified chunk as malicious. "
+                    f"Confidence: {llm_res.confidence}. Reason: {llm_res.reason}"
+                )
 
         trust_score = max(0.0, min(1.0, 1.0 - penalty))
 

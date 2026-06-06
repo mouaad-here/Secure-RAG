@@ -43,6 +43,7 @@ class Retriever:
         top_k: Optional[int] = None,
         include_quarantine: bool = False,
         max_distance: float = 0.5,
+        mode: str = "secure",
     ) -> List[RetrievedChunk]:
         """
         Retrieve relevant chunks for a query.
@@ -51,6 +52,7 @@ class Retriever:
             query: The user's question.
             top_k: Number of results (default from config).
             include_quarantine: If True, also search quarantine (testing only).
+            mode: "secure" or "naive" retrieval mode.
 
         Returns:
             List of RetrievedChunk sorted by relevance.
@@ -70,6 +72,10 @@ class Retriever:
             )
             results.extend(quarantine_results)
 
+        # Filter by mode (secure mode ignores naive-ingested documents)
+        if mode == "secure":
+            results = [r for r in results if r.metadata.get("mode", "secure") == "secure"]
+
         # Sort by relevance score (lower distance = more relevant)
         results.sort(key=lambda c: c.relevance_score)
         
@@ -77,9 +83,12 @@ class Retriever:
         filtered_results = [r for r in results if r.relevance_score <= max_distance]
         
         # --- Phase 4: Defense-in-Depth Filter ---
-        from app.retrieval.filters import TrustFilter
-        filter_engine = TrustFilter()
-        safe_results = filter_engine.filter_chunks(filtered_results)
+        if mode == "secure":
+            from app.retrieval.filters import TrustFilter
+            filter_engine = TrustFilter()
+            safe_results = filter_engine.filter_chunks(filtered_results)
+        else:
+            safe_results = filtered_results
         
         return safe_results[:k]
 

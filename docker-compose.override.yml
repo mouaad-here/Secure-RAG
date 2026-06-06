@@ -10,6 +10,7 @@ services:
     volumes:
       - ./app:/app/app          # Live code reload
       - ./tests:/app/tests      # Tests accessible inside container
+      - ./dashboard:/app/dashboard # Live dashboard reload
     command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - LOG_LEVEL=DEBUG

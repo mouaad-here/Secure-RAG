@@ -9,6 +9,7 @@ const API = 'http://localhost:8000';
 const state = {
   isAsking: false,
   selectedFile: null,
+  demoMode: 'secure', // 'secure' or 'naive'
 };
 
 // ── Utilities ─────────────────────────────────────────────────
@@ -36,6 +37,33 @@ function formatDate(str) {
     return new Date(str).toLocaleString();
   } catch { return str; }
 }
+
+function updateDemoMode() {
+  const isNaive = $('mode-toggle').checked;
+  state.demoMode = isNaive ? 'naive' : 'secure';
+  
+  if (isNaive) {
+    document.body.classList.add('naive-mode');
+    $('mode-label-naive').classList.add('active');
+    $('mode-label-secure').classList.remove('active');
+    document.querySelector('.pulse-label').textContent = 'Sécurité désactivée';
+    showToast('⚠️ Passage en Mode Naïf (Sécurité désactivée)', 'error');
+  } else {
+    document.body.classList.remove('naive-mode');
+    $('mode-label-secure').classList.add('active');
+    $('mode-label-naive').classList.remove('active');
+    document.querySelector('.pulse-label').textContent = 'System Online';
+    showToast('🛡️ Passage en Mode Sécurisé (Protection active)', 'success');
+  }
+  
+  // Reload library to refresh badges if open
+  if ($('nav-documents').classList.contains('active')) {
+    loadDocuments();
+  }
+}
+
+// Bind toggle
+$('mode-toggle').addEventListener('change', updateDemoMode);
 
 // ── Navigation ────────────────────────────────────────────────
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -133,14 +161,20 @@ document.querySelectorAll('.sample-q').forEach(el => {
   });
 });
 
-function appendMessage(role, html, meta = '') {
+function appendMessage(role, html, meta = '', isNaive = false) {
   const welcome = chatMessages.querySelector('.chat-welcome');
   if (welcome) welcome.remove();
 
   const div = document.createElement('div');
-  div.className = `msg msg-${role}`;
+  div.className = `msg msg-${role} ${isNaive && role === 'ai' ? 'msg-naive' : ''}`;
+  
+  let naiveBadge = '';
+  if (isNaive && role === 'ai') {
+    naiveBadge = `<div class="msg-naive-badge">⚠️ RAG Naïf (Non Sécurisé)</div>`;
+  }
+
   div.innerHTML = `
-    <div class="msg-bubble">${html}</div>
+    <div class="msg-bubble">${naiveBadge}${html}</div>
     ${meta ? `<div class="msg-meta">${meta}</div>` : ''}
   `;
   chatMessages.appendChild(div);
@@ -157,6 +191,7 @@ async function sendQuestion() {
   questionInput.disabled = true;
 
   const topK = parseInt($('top-k-select').value || '5', 10);
+  const isNaiveMode = state.demoMode === 'naive';
 
   // User bubble
   appendMessage('user', escapeHtml(question), new Date().toLocaleTimeString());
@@ -164,47 +199,119 @@ async function sendQuestion() {
   charCountEl.textContent = '0';
 
   // Thinking bubble
-  const thinkingDiv = appendMessage('ai', '<span class="thinking-dots">Thinking</span>');
+  const thinkingDiv = appendMessage('ai', '<span class="thinking-dots">Thinking</span>', '', isNaiveMode);
 
   try {
-    const res = await fetch(`${API}/api/v1/ask`, {
+    const res = await fetch(`${API}/api/v1/ask/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, top_k: topK }),
+      body: JSON.stringify({ question, top_k: topK, naive: isNaiveMode }),
     });
 
-    const data = await res.json();
     thinkingDiv.remove();
 
     if (!res.ok) {
-      const errMsg = data?.detail?.message ?? data?.detail ?? 'Unknown error';
+      const data = await res.json();
+      let errMsg = 'Unknown error';
+      if (Array.isArray(data?.detail)) {
+        errMsg = data.detail.map(d => `${d.loc.join('.')}: ${d.msg}`).join(' | ');
+      } else {
+        errMsg = data?.detail?.message ?? data?.detail ?? 'Unknown error';
+      }
+      
       appendMessage('ai',
         `<span style="color:#fca5a5">⚠️ ${escapeHtml(errMsg)}</span>`,
-        new Date().toLocaleTimeString()
+        new Date().toLocaleTimeString(),
+        isNaiveMode
       );
-    } else {
-      let html = `<div>${escapeHtml(data.answer)}</div>`;
-
-      if (data.citations?.length) {
-        const cited = data.citations.filter(c => c.cited_in_response !== false);
-        const sourceList = cited.length ? cited : data.citations;
-        // Deduplicate by document name
-        const uniqueDocs = [...new Set(sourceList.map(c => c.document || c.source_document))].filter(Boolean);
-        
-        const chips = uniqueDocs
-          .map(doc => `<span class="citation-chip">📄 ${escapeHtml(doc)}</span>`)
-          .join('');
-        html += `<div class="citations-block">${chips}</div>`;
-      }
-      html += `<div class="chunks-badge">${data.context_chunks_used} chunk${data.context_chunks_used !== 1 ? 's' : ''} used · ${escapeHtml(data.model_used)}</div>`;
-
-      appendMessage('ai', html, new Date().toLocaleTimeString());
+      state.isAsking = false;
+      sendBtn.disabled = false;
+      questionInput.disabled = false;
+      questionInput.focus();
+      return;
     }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    
+    const msgDiv = appendMessage('ai', '', '', isNaiveMode);
+    const bubble = msgDiv.querySelector('.msg-bubble');
+    const naiveBadge = isNaiveMode ? `<div class="msg-naive-badge">⚠️ RAG Naïf (Non Sécurisé)</div>` : '';
+    
+    let answerText = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop(); // Keep incomplete event in buffer
+
+      for (const rawEvent of events) {
+        if (!rawEvent.trim()) continue;
+
+        let eventType = 'message';
+        let dataStr = '';
+
+        const lines = rawEvent.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            eventType = line.replace('event:', '').trim();
+          } else if (line.startsWith('data:')) {
+            dataStr = line.slice(5).trim();
+          }
+        }
+
+        if (eventType === 'error') {
+          const errData = JSON.parse(dataStr);
+          bubble.innerHTML = `${naiveBadge}<span style="color:#fca5a5">⚠️ ${escapeHtml(errData.message || 'Error')}</span>`;
+        } else if (eventType === 'token' || eventType === 'delta') {
+          const token = JSON.parse(dataStr);
+          answerText += token;
+          bubble.innerHTML = `${naiveBadge}<div>${escapeHtml(answerText)}</div>`;
+        } else if (eventType === 'blocked') {
+          const blockData = JSON.parse(dataStr);
+          answerText = blockData.message || '\n\n[RESPONSE BLOCKED BY SECURITY POLICY]\n\n';
+          bubble.innerHTML = `${naiveBadge}<div class="blocked-message" style="color:var(--danger); font-weight:600;">${escapeHtml(answerText)}</div>`;
+          
+          const metaEl = msgDiv.querySelector('.msg-meta') || document.createElement('div');
+          metaEl.className = 'msg-meta';
+          metaEl.textContent = new Date().toLocaleTimeString();
+          msgDiv.appendChild(metaEl);
+        } else if (eventType === 'done') {
+          console.log('Stream finished successfully');
+        } else if (eventType === 'metadata') {
+          const metaData = JSON.parse(dataStr);
+          let html = `${naiveBadge}<div>${escapeHtml(answerText)}</div>`;
+          
+          if (metaData.citations?.length) {
+            const uniqueDocs = [...new Set(metaData.citations.map(c => c.document || c.source_document))].filter(Boolean);
+            const chips = uniqueDocs
+              .map(doc => `<span class="citation-chip">📄 ${escapeHtml(doc)}</span>`)
+              .join('');
+            html += `<div class="citations-block">${chips}</div>`;
+          }
+          const modelUsed = 'llama3.2:3b';
+          html += `<div class="chunks-badge">${metaData.context_chunks_used} chunk${metaData.context_chunks_used !== 1 ? 's' : ''} used · ${escapeHtml(modelUsed)}</div>`;
+          
+          bubble.innerHTML = html;
+          const metaEl = msgDiv.querySelector('.msg-meta') || document.createElement('div');
+          metaEl.className = 'msg-meta';
+          metaEl.textContent = new Date().toLocaleTimeString();
+          msgDiv.appendChild(metaEl);
+        }
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
   } catch (err) {
     thinkingDiv.remove();
     appendMessage('ai',
       `<span style="color:#fca5a5">⚠️ Could not reach the API. Is the server running?</span>`,
-      new Date().toLocaleTimeString()
+      new Date().toLocaleTimeString(),
+      isNaiveMode
     );
   }
 
@@ -274,11 +381,15 @@ ingestBtn.addEventListener('click', async () => {
   ingestBtn.textContent = 'Ingesting…';
 
   const label = $('source-label').value.trim() || undefined;
+  const isNaive = state.demoMode === 'naive';
+  const queryParams = [];
+  if (label) queryParams.push(`source_label=${encodeURIComponent(label)}`);
+  if (isNaive) queryParams.push(`naive=true`);
+  
+  const queryString = queryParams.length ? '?' + queryParams.join('&') : '';
+  const url = `${API}/api/v1/ingest${queryString}`;
   const formData = new FormData();
   formData.append('file', state.selectedFile);
-  const url = label
-    ? `${API}/api/v1/ingest?source_label=${encodeURIComponent(label)}`
-    : `${API}/api/v1/ingest`;
 
   try {
     const res = await fetch(url, { method: 'POST', body: formData });
@@ -286,14 +397,31 @@ ingestBtn.addEventListener('click', async () => {
 
     ingestResult.style.display = 'block';
     if (res.ok) {
-      ingestResult.className = 'ingest-result success';
-      ingestResult.innerHTML = `
-        ✅ <strong>${escapeHtml(data.filename)}</strong> ingested successfully<br>
-        <span style="font-size:12px">
-          📦 ${data.chunk_count} chunks · 
-          🏷️ ${data.trust_status} · 
-          🔑 <code style="font-family:var(--mono)">${data.doc_id}</code>
-        </span>`;
+      if (isNaive) {
+        ingestResult.className = 'ingest-result success';
+        ingestResult.style.borderColor = 'var(--amber)';
+        ingestResult.style.background = 'rgba(245,158,11,0.1)';
+        ingestResult.style.color = 'var(--amber)';
+        ingestResult.innerHTML = `
+          ✅ <strong>${escapeHtml(data.filename)}</strong> ingesté avec succès (Mode Naïf)<br>
+          <span style="font-size:12px; color: var(--amber)">
+            📦 ${data.chunk_count} chunks · 
+            ⚠️ Scan court-circuité (Vulnérable) · 
+            🔑 ID: <code>${data.doc_id}</code>
+          </span>`;
+      } else {
+        ingestResult.className = 'ingest-result success';
+        ingestResult.style.borderColor = '';
+        ingestResult.style.background = '';
+        ingestResult.style.color = '';
+        ingestResult.innerHTML = `
+          ✅ <strong>${escapeHtml(data.filename)}</strong> ingested successfully<br>
+          <span style="font-size:12px">
+            📦 ${data.chunk_count} chunks · 
+            🏷️ ${data.trust_status} · 
+            🔑 <code style="font-family:var(--mono)">${data.doc_id}</code>
+          </span>`;
+      }
       showToast('Document ingested!', 'success');
     } else {
       ingestResult.className = 'ingest-result error';
@@ -330,23 +458,30 @@ async function loadDocuments() {
       return;
     }
 
-    grid.innerHTML = data.documents.map(doc => `
-      <div class="doc-card">
-        <div class="doc-card-header">
-          <span class="doc-filename">📄 ${escapeHtml(doc.filename)}</span>
-          <span class="trust-badge ${doc.trust_status}">${doc.trust_status}</span>
+    grid.innerHTML = data.documents.map(doc => {
+      const isNaiveDoc = doc.source_label === 'naive' || (doc.source_label && doc.source_label.startsWith('naive-'));
+      const badgeClass = isNaiveDoc ? 'naive_trusted' : doc.trust_status;
+      const badgeText = isNaiveDoc ? 'NAÏF' : doc.trust_status;
+      const cardBorder = isNaiveDoc ? 'border-color: var(--amber)' : '';
+      
+      return `
+        <div class="doc-card" style="${cardBorder}">
+          <div class="doc-card-header">
+            <span class="doc-filename">📄 ${escapeHtml(doc.filename)}</span>
+            <span class="trust-badge ${badgeClass}">${escapeHtml(badgeText)}</span>
+          </div>
+          <div class="doc-meta">
+            <span class="doc-meta-item"><strong>Type:</strong> ${doc.file_type.toUpperCase()}</span>
+            <span class="doc-meta-item"><strong>Size:</strong> ${formatBytes(doc.file_size_bytes)}</span>
+            <span class="doc-meta-item"><strong>Chunks:</strong> ${doc.chunk_count}</span>
+            <span class="doc-meta-item"><strong>Trust:</strong> ${doc.trust_score != null ? doc.trust_score.toFixed(2) : '—'}</span>
+            <span class="doc-meta-item"><strong>Label:</strong> ${escapeHtml(doc.source_label)}</span>
+            <span class="doc-meta-item"><strong>Ingested:</strong> ${formatDate(doc.ingested_at)}</span>
+          </div>
+          <div class="doc-id">${doc.doc_id}</div>
         </div>
-        <div class="doc-meta">
-          <span class="doc-meta-item"><strong>Type:</strong> ${doc.file_type.toUpperCase()}</span>
-          <span class="doc-meta-item"><strong>Size:</strong> ${formatBytes(doc.file_size_bytes)}</span>
-          <span class="doc-meta-item"><strong>Chunks:</strong> ${doc.chunk_count}</span>
-          <span class="doc-meta-item"><strong>Trust:</strong> ${doc.trust_score != null ? doc.trust_score.toFixed(2) : '—'}</span>
-          <span class="doc-meta-item"><strong>Label:</strong> ${escapeHtml(doc.source_label)}</span>
-          <span class="doc-meta-item"><strong>Ingested:</strong> ${formatDate(doc.ingested_at)}</span>
-        </div>
-        <div class="doc-id">${doc.doc_id}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   } catch {
     grid.innerHTML = '<div class="doc-empty">⚠️ Could not reach the API. Is the server running?</div>';
   }

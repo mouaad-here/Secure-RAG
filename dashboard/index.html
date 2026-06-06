@@ -58,6 +58,17 @@
       <div class="health-title">
         <h1>Secure RAG <span class="version-badge">v0.1</span></h1>
       </div>
+      
+      <!-- Comparative Demo Toggle -->
+      <div class="mode-toggle-container">
+        <span class="mode-toggle-label active" id="mode-label-secure">🛡️ Sécurisé</span>
+        <label class="switch">
+          <input type="checkbox" id="mode-toggle" />
+          <span class="slider round"></span>
+        </label>
+        <span class="mode-toggle-label" id="mode-label-naive">⚠️ Naïf (Vulnérable)</span>
+      </div>
+
       <div class="health-indicators" id="health-indicators">
         <div class="indicator" id="ind-api">
           <span class="ind-dot checking"></span>

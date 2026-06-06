@@ -134,13 +134,20 @@ class OutputFirewall:
         if not context_chunks:
             return flags, details
 
+        import string
+        # Keep hyphens for terms like "full-time", translate other punctuation to space
+        punc = string.punctuation.replace("-", "")
+        translator = str.maketrans(punc, " " * len(punc))
+
         # Simple overlap check: at least some words from context appear in response
         context_words = set()
         for chunk in context_chunks:
-            words = set(chunk.lower().split())
+            cleaned_chunk = chunk.translate(translator)
+            words = set(cleaned_chunk.lower().split())
             context_words.update(w for w in words if len(w) > 4)
 
-        response_words = set(response.lower().split())
+        cleaned_response = response.translate(translator)
+        response_words = set(cleaned_response.lower().split())
         overlap = context_words.intersection(response_words)
 
         if len(overlap) < 3 and len(context_words) > 4:
